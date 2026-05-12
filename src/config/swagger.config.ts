@@ -4,13 +4,13 @@ import { IsNotEmpty, IsOptional } from 'class-validator';
 @Configuration()
 export class SwaggerConfig {
   @IsNotEmpty()
-  @Value('SWAGGER_TITLE', { default: 'Backend template API' })
+  @Value('SWAGGER_TITLE', { default: 'bKash Payment Sync Backend API' })
   title: string;
 
   @IsNotEmpty()
   @Value('SWAGGER_DESCRIPTION', {
     default:
-      'A comprehensive NestJS-based backend application for sports administration',
+      'A comprehensive NestJS-based backend application for bKash payment synchronization',
   })
   description: string;
 
@@ -19,7 +19,7 @@ export class SwaggerConfig {
   version: string;
 
   @IsOptional()
-  @Value('SWAGGER_CONTACT_NAME', { default: 'Backend template Team' })
+  @Value('SWAGGER_CONTACT_NAME', { default: 'bKash Payment Sync Backend Team' })
   contactName: string;
 
   @IsOptional()

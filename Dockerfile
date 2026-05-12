@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for Backend template
+# Multi-stage Dockerfile for bKash Payment Sync Backend
 # Stage 1: Build stage with all dependencies
 FROM node:18-alpine AS builder
 

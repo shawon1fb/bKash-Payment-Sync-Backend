@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Backend template - Environment Management Script
+# bKash Payment Sync Backend - Environment Management Script
 
 set -e
 

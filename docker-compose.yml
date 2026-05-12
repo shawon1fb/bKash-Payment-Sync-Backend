@@ -1,7 +1,7 @@
 services:
   redis:
     image: redis:6.2.6
-    container_name: backend-template-redis
+    container_name: bKash-Payment-Sync-Backend-redis
     ports:
       - '6381:6379'
     command: redis-server --requirepass eChTelptB2spNWp92Pv_U2FJd8tT9jQg
@@ -16,7 +16,7 @@ services:
       - backend_network
   redis-bullmq:
     image: redis:6.2.6
-    container_name: backend-template-redis-bullmq
+    container_name: bKash-Payment-Sync-Backend-redis-bullmq
     ports:
       - '6382:6379'
     command: redis-server
@@ -30,7 +30,7 @@ services:
       - backend_network
   redis-bullboard:
     image: deadly0/bull-board
-    container_name: backend-template-redis-bullboard
+    container_name: bKash-Payment-Sync-Backend-redis-bullboard
     ports:
       - '3001:3000'
     environment:
@@ -44,7 +44,7 @@ services:
       - backend_network
   postgres:
     image: postgres:15-alpine
-    container_name: backend-template-postgres
+    container_name: bKash-Payment-Sync-Backend-postgres
     ports:
       - '5433:5432'
     environment:
