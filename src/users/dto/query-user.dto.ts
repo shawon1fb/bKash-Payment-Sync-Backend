@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsNumber, Min, Max, IsEnum, IsBoolean } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from './create-user.dto';
 import { UserResponseDto } from './user-response.dto';
 
@@ -58,16 +58,21 @@ export class QueryUserDto {
   sortOrder?: SortOrder = SortOrder.DESC;
 }
 
+export class UserPaginationMetaDto {
+  @ApiProperty() total: number;
+  @ApiProperty() page: number;
+  @ApiProperty() limit: number;
+  @ApiProperty() totalPages: number;
+  @ApiProperty() hasNextPage: boolean;
+  @ApiProperty() hasPreviousPage: boolean;
+}
+
 export class PaginatedUserResponseDto {
+  @ApiProperty({ type: [UserResponseDto] })
   data: UserResponseDto[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
+
+  @ApiProperty({ type: UserPaginationMetaDto })
+  meta: UserPaginationMetaDto;
 
   constructor(data: UserResponseDto[], total: number, page: number, limit: number) {
     this.data = data;

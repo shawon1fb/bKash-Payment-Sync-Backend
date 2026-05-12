@@ -52,16 +52,21 @@ export class SummaryResponseDto {
   to: string;
 }
 
+export class PaginationMetaDto {
+  @ApiProperty() total: number;
+  @ApiProperty() page: number;
+  @ApiProperty() limit: number;
+  @ApiProperty() totalPages: number;
+  @ApiProperty() hasNextPage: boolean;
+  @ApiProperty() hasPreviousPage: boolean;
+}
+
 export class PaginatedTransactionResponseDto {
+  @ApiProperty({ type: [TransactionResponseDto] })
   data: TransactionResponseDto[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
+
+  @ApiProperty({ type: PaginationMetaDto })
+  meta: PaginationMetaDto;
 
   constructor(
     data: TransactionResponseDto[],
