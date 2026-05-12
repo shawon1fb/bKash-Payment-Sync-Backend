@@ -42,4 +42,8 @@ export class AppConfig {
   @IsNotEmpty()
   @Value('RATE_LIMIT_LIMIT')
   rateLimitLimit: number;
+
+  @IsNotEmpty()
+  @Value('OTP_EXPIRES_MINUTES')
+  otpExpiresMinutes: number;
 }

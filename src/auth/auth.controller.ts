@@ -4,192 +4,62 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
-import { AuthService, LoginDto, AuthResponse } from './auth.service';
-import { CreateUserDto } from '../users/dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthService, AuthTokens } from './auth.service';
+import { SendOtpDto, VerifyOtpDto, RefreshTokenDto } from './dto';
 import { Public, CurrentUser } from './decorators';
 import { UserResponseDto } from '../users/dto';
-import { RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
-import {
-  LoginResponseDto,
-  RefreshResponseDto,
-  RegisterResponseDto,
-  MessageResponseDto,
-} from './dto/auth-response.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('register')
-  @Public()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Register a new user',
-    description: 'Creates a new user account with the provided credentials.',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'User registered successfully',
-    type: RegisterResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data or validation errors',
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'User already exists with this email or username',
-  })
-  async register(
-    @Body(new ValidationPipe({ transform: true, whitelist: true }))
-    createUserDto: CreateUserDto,
-  ): Promise<AuthResponse> {
-    return this.authService.register(createUserDto);
-  }
-
-  @Post('login')
+  @Post('otp/send')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'User login',
-    description:
-      'Authenticates a user with email and password, returns access and refresh tokens.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Login successful',
-    type: LoginResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Invalid credentials or account locked',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
-  })
-  async login(
+  @ApiOperation({ summary: 'Send OTP to phone number' })
+  @ApiResponse({ status: 200, description: 'OTP sent' })
+  sendOtp(
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
-    loginDto: LoginDto,
-  ): Promise<AuthResponse> {
-    return this.authService.login(loginDto);
+    dto: SendOtpDto,
+  ): Promise<{ message: string }> {
+    return this.authService.sendOtp(dto.phone);
+  }
+
+  @Post('otp/verify')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify OTP and get tokens' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
+  verifyOtp(
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: VerifyOtpDto,
+  ): Promise<AuthTokens> {
+    return this.authService.verifyOtp(dto.phone, dto.otp);
   }
 
   @Post('refresh')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Refresh access token',
-    description: 'Generates a new access token using a valid refresh token.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Token refreshed successfully',
-    type: RefreshResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Invalid or expired refresh token',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
-  })
-  async refresh(
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ status: 200, description: 'Token refreshed' })
+  refresh(
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
-    refreshTokenDto: RefreshTokenDto,
+    dto: RefreshTokenDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    return this.authService.refreshTokens(refreshTokenDto.refreshToken);
+    return this.authService.refreshTokens(dto.refreshToken);
   }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'User logout',
-    description: 'Invalidates the refresh token and logs out the user.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Logout successful',
-    type: MessageResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing authentication',
-  })
-  async logout(
-    @CurrentUser() user: UserResponseDto,
-  ): Promise<{ message: string }> {
-    return this.authService.logout(user.id);
-  }
-
-  @Post('forgot-password')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Request password reset',
-    description: 'Sends a password reset email to the specified email address.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Password reset email sent successfully',
-    type: MessageResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid email format',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found with this email',
-  })
-  async forgotPassword(
-    @Body(new ValidationPipe({ transform: true, whitelist: true }))
-    forgotPasswordDto: ForgotPasswordDto,
-  ): Promise<{ message: string }> {
-    return this.authService.forgotPassword(forgotPasswordDto.email);
-  }
-
-  @Post('reset-password')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Reset password',
-    description: 'Resets the user password using a valid reset token.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Password reset successfully',
-    type: MessageResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data or password requirements not met',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Invalid or expired reset token',
-  })
-  async resetPassword(
-    @Body(new ValidationPipe({ transform: true, whitelist: true }))
-    resetPasswordDto: ResetPasswordDto,
-  ): Promise<{ message: string }> {
-    return this.authService.resetPassword(
-      resetPasswordDto.token,
-      resetPasswordDto.newPassword,
-    );
+  @ApiOperation({ summary: 'Logout (client should discard tokens)' })
+  @ApiResponse({ status: 200 })
+  logout(@CurrentUser() _user: UserResponseDto): { message: string } {
+    return { message: 'Logged out successfully' };
   }
 }
