@@ -7,254 +7,225 @@
 
 ---
 
-## Current State (Boilerplate)
+## Current State
 
-Already exists:
-- NestJS 11 + Fastify setup
-- Drizzle ORM + PostgreSQL connection
+**Branch:** `main` (merged 2026-05-12)  
+**Build:** passing  
+**Commit:** `5adc889`
+
+### What exists now
+- NestJS 11 + Fastify
+- Drizzle ORM + PostgreSQL
 - Redis cache + BullMQ queue
-- JWT auth (email/password) — **needs replacement**
-- Users CRUD module
-- Common: guards, pipes, filters, middleware, pagination
+- OTP-based auth (phone + JWT)
+- Users module (phone-based, agent/admin roles)
+- Transactions module (SMS parse, CRUD, summary)
+- Admin module (all txns, agent management)
+- Common: guards, pipes, filters, middleware
 
 ---
 
-## Phase 1 — Database Schema
+## Phase 1 — Database Schema ✅
 
-### 1.1 Modify `users` table
-- [ ] Add `phone` (unique, not null)
-- [ ] Add `role` enum: `admin | agent`
-- [ ] Remove `email` / `password` fields (replaced by OTP auth)
-- [ ] Keep: `id`, `name`, `created_at`
-
-### 1.2 New: `otp_verifications` table
+### 1.1 `users` table
 ```
-id            uuid PK
-phone         varchar
-otp           varchar(6)
-expires_at    timestamp
-is_used       boolean default false
-created_at    timestamp
+id          uuid PK
+name        varchar(100)
+phone       varchar(20) UNIQUE
+role        enum('admin', 'agent') default 'agent'
+is_active   boolean default true
+created_at  timestamp
+updated_at  timestamp
 ```
 
-### 1.3 New: `transactions` table
+### 1.2 `otp_verifications` table
+```
+id          uuid PK
+phone       varchar(20)
+otp         varchar(6)
+expires_at  timestamp
+is_used     boolean default false
+created_at  timestamp
+```
+
+### 1.3 `transactions` table
 ```
 id               uuid PK
-transaction_id   varchar UNIQUE   -- bKash TrxID
+transaction_id   varchar(50) UNIQUE
 amount           numeric(12,2)
-transaction_time timestamp        -- time from SMS/bKash
-status           enum('received', 'paid')
+transaction_time timestamp
+status           enum('received', 'paid') default 'received'
 agent_id         uuid FK → users.id
-raw_message      text             -- original SMS text
+raw_message      text
 created_at       timestamp
 ```
 
 ### Migration steps
-- [ ] Update `src/database/schema/index.ts`
-- [ ] `yarn db:generate`
-- [ ] `yarn db:migrate`
+- [x] Schema written → `src/database/schema/index.ts`
+- [ ] `yarn db:generate` — generate migration files
+- [ ] `yarn db:migrate` — apply to DB
 
 ---
 
-## Phase 2 — Auth Module (OTP-based)
+## Phase 2 — Auth Module ✅
 
-Replace current email/password auth with phone + OTP flow.
+OTP flow replaces email/password.
 
-### 2.1 DTOs
-- [ ] `SendOtpDto` — `{ phone: string }`
-- [ ] `VerifyOtpDto` — `{ phone: string, otp: string }`
-
-### 2.2 Service methods
-- [ ] `sendOtp(phone)` — generate 6-digit OTP, store in `otp_verifications`, return OTP (dev) / send SMS (prod)
-- [ ] `verifyOtp(phone, otp)` — validate OTP + expiry, mark `is_used=true`, find/create user, issue JWT
-
-### 2.3 Endpoints
+### Endpoints
 ```
-POST /auth/otp/send      @Public()  — send OTP to phone
-POST /auth/otp/verify    @Public()  — verify OTP, return access + refresh tokens
-POST /auth/refresh        @Public()  — refresh access token
+POST /auth/otp/send      @Public()  — sends OTP (logs to console in dev)
+POST /auth/otp/verify    @Public()  — verifies OTP, returns JWT tokens
+POST /auth/refresh       @Public()  — refresh access token
+POST /auth/logout                   — client discards tokens
 ```
 
-### 2.4 JWT Payload update
+### JWT Payload
 ```ts
-{ sub: userId, phone, role }   // replace email with phone
+{ sub: userId, phone, role }
 ```
 
-### 2.5 Config
-- [ ] Add `OTP_EXPIRES_MINUTES` env var (default: 5)
-- [ ] Add SMS provider config (optional in v1, log OTP to console in dev)
+### Config added
+```env
+OTP_EXPIRES_MINUTES=5   # in .env and AppConfig
+```
+
+> **Note:** SMS provider not integrated. OTP logged to console in dev (`NODE_ENV !== 'production'`). Production SMS wiring is **pending** (Phase 7).
 
 ---
 
-## Phase 3 — Transaction Module
+## Phase 3 — Transaction Module ✅
 
 `src/transactions/`
 
-### 3.1 DTOs
-- [ ] `UploadTransactionDto` — `{ raw_message: string }` only — server parses all fields
-- [ ] `VerifyTransactionDto` — `{ transaction_id }`
-- [ ] `UpdateTransactionStatusDto` — `{ transaction_id, status: 'paid' }`
-- [ ] `TransactionQueryDto` — pagination + date range + status filter
-
-### 3.1.1 SMS Parser (`src/transactions/utils/sms-parser.util.ts`)
-
-bKash Cashout SMS format:
+### SMS Parser (`src/transactions/utils/sms-parser.util.ts`)
 ```
-Cash Out Tk 1,500.00 from 01711223344 successful. TrxID A2B3C4D5E6. Fee Tk 15.00. Balance Tk 5,000.00. 12/05/26 2:30 PM
+Input:  "Cash Out Tk 1,500.00 from 01711223344 successful. TrxID A2B3C4D5E6. Fee Tk 15.00. Balance Tk 5,000.00. 12/05/26 2:30 PM"
+Output: { transactionId, amount, transactionTime }
+Fail:   returns null → controller throws 400
 ```
 
-Parsed fields:
-| Field | Pattern |
-|---|---|
-| `transaction_id` | `TrxID ([A-Z0-9]+)` |
-| `amount` | `Tk ([\d,]+\.\d{2})` (first match = cashout amount) |
-| `transaction_time` | `(\d{2}/\d{2}/\d{2} \d{1,2}:\d{2} [AP]M)` |
-| `sender_phone` | `from (01\d{9})` (stored in raw, not a DB column) |
-
-Parser returns `ParsedSmsResult | null`. If null → 422 with `"Could not parse SMS message"`.
-
-### 3.2 Service methods
-| Method | Description |
-|---|---|
-| `uploadTransaction(agentId, dto)` | Parse `raw_message` → extract fields → save with `status=received` |
-| `verifyTransaction(transactionId)` | Search `status=received` txns, return match |
-| `updateStatus(transactionId, 'paid')` | Agent marks txn as paid |
-| `getAgentTransactions(agentId, query)` | Paginated list for agent |
-| `getAgentSummary(agentId, range)` | Daily/weekly/monthly/custom summary |
-
-### 3.3 Endpoints
+### Endpoints
 ```
-POST   /transactions/upload            Agent — upload new transaction
-GET    /transactions/verify/:txnId     @Public() or Agent — verify by TrxID
-PATCH  /transactions/:txnId/status     Agent — mark paid
-GET    /transactions                   Agent — own transaction list
-GET    /transactions/summary           Agent — summary report
+POST   /transactions/upload            Agent — parse SMS + save (status=received)
+GET    /transactions/verify/:txnId     @Public() — verify by TrxID (received only)
+PATCH  /transactions/:txnId/status     Agent — mark as paid
+GET    /transactions                   Agent — own list (paginated + filterable)
+GET    /transactions/summary           Agent — daily/weekly/monthly/custom summary
 ```
 
-### 3.4 Summary query params
+### Summary query
 ```
 ?period=daily|weekly|monthly|custom
 &from=YYYY-MM-DD   (required if period=custom)
 &to=YYYY-MM-DD     (required if period=custom)
 ```
 
-### 3.5 Summary response shape
-```json
-{
-  "total_paid_amount": 45000.00,
-  "total_transaction_count": 23,
-  "period": "weekly",
-  "from": "2026-05-05",
-  "to": "2026-05-12"
-}
-```
-
 ---
 
-## Phase 4 — Admin Module
+## Phase 4 — Admin Module ✅
 
-`src/admin/`
+`src/admin/` — all endpoints `@Roles('admin')`
 
-### 4.1 All endpoints guarded by `@Roles('admin')`
-
-### 4.2 Endpoints
+### Endpoints
 ```
-GET    /admin/transactions              All agents' transactions (paginated + filterable)
+GET    /admin/transactions              All txns (filter: agentId, status, from, to)
 GET    /admin/transactions/summary      System-wide summary
-GET    /admin/agents                    List all agents
+GET    /admin/agents                    List agents (paginated)
 POST   /admin/agents                    Create agent
-PATCH  /admin/agents/:id               Update agent
-DELETE /admin/agents/:id               Deactivate agent
+PATCH  /admin/agents/:id               Update name / isActive
+DELETE /admin/agents/:id               Deactivate agent (soft delete)
 GET    /admin/agents/:id/summary        Agent-wise summary
-GET    /admin/agents/:id/transactions   Specific agent's transactions
+GET    /admin/agents/:id/transactions   Agent's transactions
 ```
 
-### 4.3 Admin query filters
-- `agent_id` — filter by agent
-- `status` — received | paid
-- `from` / `to` — date range
-- `page` / `limit` — pagination
+---
+
+## Phase 5 — Users Module ✅
+
+Simplified to phone-based profile only.
+
+### Endpoints
+```
+GET    /users/profile    Own profile
+PATCH  /users/profile    Update own name
+GET    /users            List all (admin only)
+GET    /users/:id        Get by id (admin only)
+PATCH  /users/:id        Update (admin only)
+```
 
 ---
 
-## Phase 5 — Users Module Update
-
-Current users module handles email/password. Update:
-- [ ] Remove password-related endpoints
-- [ ] Add phone as primary identifier
-- [ ] Keep profile view + update (name only)
-- [ ] Admin can manage agents via admin module
-
----
-
-## Phase 6 — Environment Variables (additions)
+## Phase 6 — Env Vars ✅
 
 ```env
-# OTP
 OTP_EXPIRES_MINUTES=5
-
-# SMS Provider (optional v1)
-SMS_PROVIDER_URL=
-SMS_PROVIDER_API_KEY=
 ```
+
+Added to `src/config/app.config.ts` and `.env.example`.
 
 ---
 
-## File Structure (to be created)
+## Phase 7 — Pending / Next Steps
+
+- [ ] **DB Migrations** — run `yarn db:generate && yarn db:migrate`
+- [ ] **SMS Provider** — wire real OTP delivery for production (Twilio / local BD provider)
+- [ ] **SMS Parser hardening** — handle more bKash SMS format variations (received money, agent cashout confirmation, etc.)
+- [ ] **E2E tests** — cover auth OTP flow, transaction upload, admin endpoints
+- [ ] **Unit tests** — `sms-parser.util.ts` edge cases
+- [ ] **Rate limiting** — tighten OTP send endpoint (prevent spam)
+- [ ] **OTP cleanup job** — BullMQ scheduled job to delete expired OTP records
+
+---
+
+## File Structure (current)
 
 ```
 src/
+  config/
+    app.config.ts         OTP_EXPIRES_MINUTES added
+  database/
+    schema/index.ts       users + otp_verifications + transactions
   auth/
     dto/
-      send-otp.dto.ts           NEW
-      verify-otp.dto.ts         NEW
-    auth.service.ts             MODIFY (replace email/pass with OTP)
-    auth.controller.ts          MODIFY
-
+      send-otp.dto.ts
+      verify-otp.dto.ts
+      refresh-token.dto.ts
+    auth.service.ts       OTP flow
+    auth.controller.ts
+    strategies/jwt.strategy.ts
+    guards/roles.guard.ts  string-based roles
+    decorators/roles.decorator.ts
+  users/
+    dto/                  phone-based, simplified
+    users.service.ts
+    users.controller.ts
   transactions/
-    utils/
-      sms-parser.util.ts        NEW — regex parser for bKash SMS
+    utils/sms-parser.util.ts
     dto/
       upload-transaction.dto.ts
-      verify-transaction.dto.ts
       update-status.dto.ts
       transaction-query.dto.ts
       transaction-response.dto.ts
-      summary-response.dto.ts
-    transactions.module.ts
     transactions.service.ts
     transactions.controller.ts
-
+    transactions.module.ts
   admin/
     dto/
-      admin-query.dto.ts
+      admin-transaction-query.dto.ts
       create-agent.dto.ts
-    admin.module.ts
     admin.service.ts
     admin.controller.ts
-
-  database/schema/
-    index.ts                    MODIFY (add otp_verifications, transactions)
+    admin.module.ts
 ```
-
----
-
-## Implementation Order
-
-1. [ ] Phase 1 — Schema + migrations
-2. [ ] Phase 2 — OTP auth
-3. [ ] Phase 3 — Transaction module
-4. [ ] Phase 4 — Admin module
-5. [ ] Phase 5 — Users module cleanup
-6. [ ] Phase 6 — Env vars + SMS integration
 
 ---
 
 ## Key Constraints (from CLAUDE.md)
 
-- Drizzle ORM only (no raw SQL)
-- `@itgorillaz/configify` for all env vars
+- Drizzle ORM only (no raw SQL, no TypeORM/Prisma)
+- `@itgorillaz/configify` for all env vars — no `process.env` in app code
 - Fastify only (no Express middleware)
-- `JwtAuthGuard` global — use `@Public()` for open endpoints
+- `JwtAuthGuard` global — `@Public()` to opt out
 - `@Roles('admin')` via `RolesGuard` for admin routes
-- All DTOs need `class-validator` + `@ApiProperty()`
+- All DTOs: `class-validator` + `@ApiProperty()`
+- Package manager: Yarn only
