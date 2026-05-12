@@ -2,6 +2,7 @@ export interface ParsedSms {
   transactionId: string;
   amount: number;
   transactionTime: Date;
+  senderPhone: string | null;
 }
 
 /**
@@ -20,13 +21,16 @@ export function parseBkashSms(raw: string): ParsedSms | null {
   );
   if (!timeMatch) return null;
 
+  const senderMatch = raw.match(/from\s+(01[3-9]\d{8})/i);
+
   const transactionId = txnMatch[1].toUpperCase();
   const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
   const transactionTime = parseDateTime(timeMatch[1], timeMatch[2]);
+  const senderPhone = senderMatch ? senderMatch[1] : null;
 
   if (isNaN(amount) || !transactionTime) return null;
 
-  return { transactionId, amount, transactionTime };
+  return { transactionId, amount, transactionTime, senderPhone };
 }
 
 function parseDateTime(datePart: string, timePart: string): Date | null {

@@ -43,6 +43,8 @@ export const transactions = pgTable('transactions', {
   agentId: uuid('agent_id')
     .notNull()
     .references(() => users.id),
+  senderPhone: varchar('sender_phone', { length: 20 }),
+  receiverPhone: varchar('receiver_phone', { length: 20 }),
   rawMessage: text('raw_message').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

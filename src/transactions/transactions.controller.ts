@@ -40,7 +40,7 @@ export class TransactionsController {
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     dto: UploadTransactionDto,
   ): Promise<TransactionResponseDto> {
-    return this.transactionsService.upload(user.id, dto);
+    return this.transactionsService.upload(user.id, user.phone, dto);
   }
 
   @Get('verify/:transactionId')

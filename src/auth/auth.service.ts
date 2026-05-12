@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { eq, and, gt } from 'drizzle-orm';
+import { eq, and, gt, desc } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
 import { otpVerifications, users } from '../database/schema';
 import { UsersService } from '../users/users.service';
@@ -64,7 +64,7 @@ export class AuthService {
           gt(otpVerifications.expiresAt, new Date()),
         ),
       )
-      .orderBy(otpVerifications.createdAt)
+      .orderBy(desc(otpVerifications.createdAt))
       .limit(1);
 
     if (!record) {
