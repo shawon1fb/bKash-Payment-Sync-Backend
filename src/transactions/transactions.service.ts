@@ -24,7 +24,7 @@ import { plainToClass } from 'class-transformer';
 export class TransactionsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async upload(agentId: string, dto: UploadTransactionDto): Promise<TransactionResponseDto> {
+  async upload(agentId: string, agentPhone: string, dto: UploadTransactionDto): Promise<TransactionResponseDto> {
     const parsed = parseBkashSms(dto.rawMessage);
     if (!parsed) {
       throw new BadRequestException('Could not parse SMS message');
@@ -49,6 +49,8 @@ export class TransactionsService {
         transactionTime: parsed.transactionTime,
         status: 'received',
         agentId,
+        senderPhone: parsed.senderPhone,
+        receiverPhone: agentPhone,
         rawMessage: dto.rawMessage,
       })
       .returning();

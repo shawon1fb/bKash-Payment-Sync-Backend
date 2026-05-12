@@ -26,6 +26,14 @@ export class TransactionResponseDto {
   @Expose()
   agentId: string;
 
+  @ApiProperty({ nullable: true })
+  @Expose()
+  senderPhone: string | null;
+
+  @ApiProperty()
+  @Expose()
+  receiverPhone: string;
+
   @ApiProperty()
   @Expose()
   rawMessage: string;
