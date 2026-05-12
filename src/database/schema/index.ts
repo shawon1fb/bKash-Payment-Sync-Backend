@@ -1,50 +1,61 @@
 import {
   pgTable,
-  serial,
   varchar,
   text,
   timestamp,
   boolean,
-  integer,
   uuid,
-  json,
+  numeric,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
 
-// User role enum
-export enum UserRole {
-  USER = 'user',
-  ADMIN = 'admin',
-  MODERATOR = 'moderator',
-}
+export const userRoleEnum = pgEnum('user_role', ['admin', 'agent']);
+export const transactionStatusEnum = pgEnum('transaction_status', [
+  'received',
+  'paid',
+]);
 
-// Comprehensive User table schema with enhanced security and validation
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  username: varchar('username', { length: 100 }).notNull().unique(),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
-  password: varchar('password', { length: 255 }).notNull(), // Will store bcrypt hash
-  role: varchar('role', { length: 50 }).notNull().default('user'), // user, admin, moderator
-  profilePicture: varchar('profile_picture', { length: 500 }),
+  name: varchar('name', { length: 100 }).notNull(),
+  phone: varchar('phone', { length: 20 }).notNull().unique(),
+  role: userRoleEnum('role').notNull().default('agent'),
   isActive: boolean('is_active').notNull().default(true),
-  isEmailVerified: boolean('is_email_verified').notNull().default(false),
-  emailVerificationToken: varchar('email_verification_token', { length: 255 }),
-  passwordResetToken: varchar('password_reset_token', { length: 255 }),
-  passwordResetExpires: timestamp('password_reset_expires'),
-  lastLoginAt: timestamp('last_login_at'),
-  loginAttempts: integer('login_attempts').default(0),
-  lockUntil: timestamp('lock_until'),
-  twoFactorSecret: varchar('two_factor_secret', { length: 255 }),
-  isTwoFactorEnabled: boolean('is_two_factor_enabled').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-// Export all schemas
+export const otpVerifications = pgTable('otp_verifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  phone: varchar('phone', { length: 20 }).notNull(),
+  otp: varchar('otp', { length: 6 }).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  isUsed: boolean('is_used').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const transactions = pgTable('transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  transactionId: varchar('transaction_id', { length: 50 }).notNull().unique(),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  transactionTime: timestamp('transaction_time').notNull(),
+  status: transactionStatusEnum('status').notNull().default('received'),
+  agentId: uuid('agent_id')
+    .notNull()
+    .references(() => users.id),
+  rawMessage: text('raw_message').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const schema = {
   users,
+  otpVerifications,
+  transactions,
 };
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type OtpVerification = typeof otpVerifications.$inferSelect;
+export type NewOtpVerification = typeof otpVerifications.$inferInsert;
+export type Transaction = typeof transactions.$inferSelect;
+export type NewTransaction = typeof transactions.$inferInsert;

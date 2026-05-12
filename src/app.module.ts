@@ -19,6 +19,8 @@ import { RedisConfig } from './config/redis.config';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { AdminModule } from './admin/admin.module';
 import {
   SanitizationMiddleware,
   SecurityHeadersMiddleware,
@@ -232,6 +234,8 @@ import {
     DatabaseModule,
     UsersModule,
     AuthModule,
+    TransactionsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

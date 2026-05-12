@@ -1,3 +1,4 @@
-export { RefreshTokenDto } from './refresh-token.dto';
-export { ForgotPasswordDto } from './forgot-password.dto';
-export { ResetPasswordDto } from './reset-password.dto';
+export * from './send-otp.dto';
+export * from './verify-otp.dto';
+export * from './refresh-token.dto';
+export * from './auth-response.dto';

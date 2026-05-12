@@ -6,9 +6,11 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './auth.controller';
 import { AppConfig } from '../config/app.config';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
   imports: [
+    DatabaseModule,
     UsersModule,
     PassportModule,
     JwtModule.registerAsync({
