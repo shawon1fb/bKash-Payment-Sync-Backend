@@ -76,9 +76,9 @@ export class AuthService {
       .set({ isUsed: true })
       .where(eq(otpVerifications.id, record.id));
 
-    let user = await this.usersService.findByPhone(phone);
+    const user = await this.usersService.findByPhone(phone);
     if (!user) {
-      user = await this.usersService.create({ name: phone, phone });
+      throw new UnauthorizedException('No account found for this phone. Contact admin.');
     }
 
     if (!user.isActive) {
