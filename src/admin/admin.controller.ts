@@ -101,6 +101,7 @@ export class AdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT token.', type: ErrorResponseDto })
   @ApiResponse({ status: 403, description: 'Forbidden — caller does not have admin role.', type: ErrorResponseDto })
   @ApiResponse({ status: 404, description: 'Not found — no agent with this ID.', type: ErrorResponseDto })
+  @ApiResponse({ status: 500, description: 'Internal server error.', type: ErrorResponseDto })
   getAgent(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
     return this.adminService.getAgent(id);
   }

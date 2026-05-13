@@ -4,7 +4,12 @@ export class ErrorResponseDto {
   @ApiProperty({ description: 'Always false for error responses', example: false })
   success: boolean;
 
-  @ApiProperty({ description: 'HTTP status code reflecting the error (e.g. 400, 401, 403, 500)' })
+  @ApiProperty({
+    description: 'HTTP status code reflecting the error',
+    example: 400,
+    minimum: 100,
+    maximum: 599,
+  })
   statusCode: number;
 
   @ApiProperty({ description: 'Human-readable description of the error' })
