@@ -86,7 +86,7 @@ describe('TransactionsController', () => {
   describe('updateStatus', () => {
     it('delegates to transactionsService.updateStatus with user context', async () => {
       const dto = { status: TransactionStatus.PAID };
-      const result = await controller.updateStatus(mockAgent as any, 'A2B3C4D5E6', dto);
+      const result = await controller.updateStatus('A2B3C4D5E6', dto);
 
       expect(transactionsService.updateStatus).toHaveBeenCalledWith(
         'A2B3C4D5E6',
