@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsNumber, Min, Max, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  Min,
+  Max,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from './create-user.dto';
@@ -47,7 +55,10 @@ export class QueryUserDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ enum: UserSortField, default: UserSortField.CREATED_AT })
+  @ApiPropertyOptional({
+    enum: UserSortField,
+    default: UserSortField.CREATED_AT,
+  })
   @IsOptional()
   @IsEnum(UserSortField)
   sortBy?: UserSortField = UserSortField.CREATED_AT;
@@ -74,7 +85,12 @@ export class PaginatedUserResponseDto {
   @ApiProperty({ type: UserPaginationMetaDto })
   meta: UserPaginationMetaDto;
 
-  constructor(data: UserResponseDto[], total: number, page: number, limit: number) {
+  constructor(
+    data: UserResponseDto[],
+    total: number,
+    page: number,
+    limit: number,
+  ) {
     this.data = data;
     const totalPages = Math.ceil(total / limit);
     this.meta = {

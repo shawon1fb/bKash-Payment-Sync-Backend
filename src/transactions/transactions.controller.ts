@@ -10,7 +10,12 @@ import {
   HttpStatus,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import {
   UploadTransactionDto,
@@ -48,7 +53,9 @@ export class TransactionsController {
   @ApiOperation({ summary: 'Verify transaction by TrxID' })
   @ApiResponse({ status: 200, type: TransactionResponseDto })
   @ApiResponse({ status: 404, description: 'Not found' })
-  verify(@Param('transactionId') transactionId: string): Promise<TransactionResponseDto> {
+  verify(
+    @Param('transactionId') transactionId: string,
+  ): Promise<TransactionResponseDto> {
     return this.transactionsService.verify(transactionId);
   }
 

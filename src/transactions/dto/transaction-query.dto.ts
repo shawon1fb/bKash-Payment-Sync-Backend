@@ -57,13 +57,19 @@ export class SummaryQueryDto {
   @IsEnum(SummaryPeriod)
   period?: SummaryPeriod = SummaryPeriod.MONTHLY;
 
-  @ApiPropertyOptional({ example: '2026-05-01', description: 'Required when period=custom' })
+  @ApiPropertyOptional({
+    example: '2026-05-01',
+    description: 'Required when period=custom',
+  })
   @IsOptional()
   @IsDateString()
   @Transform(({ value }) => (value ? new Date(value) : undefined))
   from?: Date;
 
-  @ApiPropertyOptional({ example: '2026-05-31', description: 'Required when period=custom' })
+  @ApiPropertyOptional({
+    example: '2026-05-31',
+    description: 'Required when period=custom',
+  })
   @IsOptional()
   @IsDateString()
   @Transform(({ value }) => (value ? new Date(value) : undefined))

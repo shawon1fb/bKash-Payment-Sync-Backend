@@ -34,12 +34,16 @@ export class AuthService {
     private readonly appConfig: AppConfig,
   ) {}
 
-  async sendOtp(phone: string): Promise<{ message: string }> {
+  async sendOtp(phone: string): Promise<{
+    success: boolean;
+    message: string;
+    phone: string;
+    expiresInMinutes: number;
+  }> {
     const db = this.databaseService.getDatabase();
     const otp = this.generateOtp();
-    const expiresAt = new Date(
-      Date.now() + Number(this.appConfig.otpExpiresMinutes) * 60 * 1000,
-    );
+    const expiresInMinutes = Number(this.appConfig.otpExpiresMinutes);
+    const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
     await db.insert(otpVerifications).values({ phone, otp, expiresAt });
 
@@ -47,7 +51,12 @@ export class AuthService {
       console.log(`[OTP] phone=${phone} otp=${otp}`);
     }
 
-    return { message: 'OTP sent' };
+    return {
+      success: true,
+      message: 'OTP sent successfully',
+      phone,
+      expiresInMinutes,
+    };
   }
 
   async verifyOtp(phone: string, otp: string): Promise<AuthTokens> {
@@ -78,7 +87,9 @@ export class AuthService {
 
     const user = await this.usersService.findByPhone(phone);
     if (!user) {
-      throw new UnauthorizedException('No account found for this phone. Contact admin.');
+      throw new UnauthorizedException(
+        'No account found for this phone. Contact admin.',
+      );
     }
 
     if (!user.isActive) {
@@ -88,7 +99,9 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  async refreshTokens(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async refreshTokens(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     let payload: JwtPayload;
     try {
       payload = this.jwtService.verify(refreshToken, {
@@ -104,7 +117,10 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user);
-    return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
   }
 
   async validateUser(payload: JwtPayload): Promise<UserResponseDto | null> {
@@ -117,7 +133,11 @@ export class AuthService {
   }
 
   private async generateTokens(user: UserResponseDto): Promise<AuthTokens> {
-    const payload: JwtPayload = { sub: user.id, phone: user.phone, role: user.role };
+    const payload: JwtPayload = {
+      sub: user.id,
+      phone: user.phone,
+      role: user.role,
+    };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

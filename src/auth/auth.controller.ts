@@ -6,10 +6,21 @@ import {
   HttpStatus,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+} from '@nestjs/swagger';
 import { AuthService, AuthTokens } from './auth.service';
-import { SendOtpDto, VerifyOtpDto, RefreshTokenDto } from './dto';
-import { Public, CurrentUser } from './decorators';
+import {
+  SendOtpDto,
+  VerifyOtpDto,
+  RefreshTokenDto,
+  SendOtpResponseDto,
+} from './dto';
+import { Public, CurrentUser, AuthRateLimit } from './decorators';
 import { UserResponseDto } from '../users/dto';
 
 @ApiTags('Authentication')
@@ -19,13 +30,45 @@ export class AuthController {
 
   @Post('otp/send')
   @Public()
+  @AuthRateLimit()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Send OTP to phone number' })
-  @ApiResponse({ status: 200, description: 'OTP sent' })
+  @ApiOperation({
+    summary: 'Send OTP to phone number',
+    description:
+      'Initiates an OTP (One-Time Password) verification flow by sending a unique 6-digit code to the provided Bangladeshi mobile number. ' +
+      'The OTP expires after a configurable duration (default 5 minutes). ' +
+      'Use the returned phone number to call POST /auth/otp/verify and complete authentication. ' +
+      'In non-production environments, the OTP is logged to the console for testing purposes.',
+  })
+  @ApiBody({ type: SendOtpDto })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP sent successfully',
+    type: SendOtpResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request — invalid or malformed phone number format',
+  })
+  @ApiResponse({
+    status: 401,
+    description:
+      'Unauthorized — missing or invalid Bearer token when required by global guard',
+  })
+  @ApiResponse({
+    status: 429,
+    description:
+      'Too Many Requests — rate limit exceeded for OTP send attempts',
+  })
+  @ApiResponse({
+    status: 500,
+    description:
+      'Internal Server Error — unexpected server error during OTP generation or storage',
+  })
   sendOtp(
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     dto: SendOtpDto,
-  ): Promise<{ message: string }> {
+  ): Promise<SendOtpResponseDto> {
     return this.authService.sendOtp(dto.phone);
   }
 

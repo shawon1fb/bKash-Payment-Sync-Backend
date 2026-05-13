@@ -7,7 +7,11 @@ import { UsersService } from '../users/users.service';
 import { AdminTransactionQueryDto } from './dto/admin-transaction-query.dto';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { SummaryQueryDto, SummaryPeriod } from '../transactions/dto';
-import { UserResponseDto, PaginatedUserResponseDto, QueryUserDto } from '../users/dto';
+import {
+  UserResponseDto,
+  PaginatedUserResponseDto,
+  QueryUserDto,
+} from '../users/dto';
 import {
   PaginatedTransactionResponseDto,
   SummaryResponseDto,
@@ -37,7 +41,10 @@ export class AdminService {
     return this.transactionsService.getSummary(null, query);
   }
 
-  async getAgentSummary(agentId: string, query: SummaryQueryDto): Promise<SummaryResponseDto> {
+  async getAgentSummary(
+    agentId: string,
+    query: SummaryQueryDto,
+  ): Promise<SummaryResponseDto> {
     return this.transactionsService.getSummary(agentId, query);
   }
 
@@ -56,7 +63,10 @@ export class AdminService {
     return this.usersService.create({ ...dto, role: 'agent' as any });
   }
 
-  async updateAgent(id: string, dto: { name?: string; isActive?: boolean }): Promise<UserResponseDto> {
+  async updateAgent(
+    id: string,
+    dto: { name?: string; isActive?: boolean },
+  ): Promise<UserResponseDto> {
     return this.usersService.update(id, dto);
   }
 

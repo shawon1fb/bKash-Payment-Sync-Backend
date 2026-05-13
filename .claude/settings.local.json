@@ -8,7 +8,11 @@
       "Bash(git -C /Users/shahanulhaque/Desktop/Projects/TraiAI/bKash-Payment-Sync-Backend commit -m ' *)",
       "Bash(git *)",
       "Bash(yarn build *)",
-      "Bash(yarn db:generate)"
+      "Bash(yarn db:generate)",
+      "Bash(docker-compose up *)",
+      "Bash(yarn db:migrate)",
+      "Bash(pkill -f \"nest start\")",
+      "Bash(pkill -f \"ts-node\")"
     ]
   }
 }

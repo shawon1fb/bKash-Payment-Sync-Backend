@@ -1,4 +1,12 @@
-import { IsOptional, IsNumber, Min, Max, IsEnum, IsDateString, IsUUID } from 'class-validator';
+import {
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+  IsEnum,
+  IsDateString,
+  IsUUID,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TransactionStatus } from '../../transactions/dto/update-status.dto';

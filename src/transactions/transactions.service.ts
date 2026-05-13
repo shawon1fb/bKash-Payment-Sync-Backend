@@ -24,7 +24,11 @@ import { plainToClass } from 'class-transformer';
 export class TransactionsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async upload(agentId: string, agentPhone: string, dto: UploadTransactionDto): Promise<TransactionResponseDto> {
+  async upload(
+    agentId: string,
+    agentPhone: string,
+    dto: UploadTransactionDto,
+  ): Promise<TransactionResponseDto> {
     const parsed = parseBkashSms(dto.rawMessage);
     if (!parsed) {
       throw new BadRequestException('Could not parse SMS message');
@@ -71,7 +75,10 @@ export class TransactionsService {
         ),
       );
 
-    if (!tx) throw new NotFoundException('Transaction not found or not in received status');
+    if (!tx)
+      throw new NotFoundException(
+        'Transaction not found or not in received status',
+      );
     return this.toDto(tx);
   }
 
@@ -139,7 +146,10 @@ export class TransactionsService {
     );
   }
 
-  async getSummary(agentId: string | null, query: SummaryQueryDto): Promise<SummaryResponseDto> {
+  async getSummary(
+    agentId: string | null,
+    query: SummaryQueryDto,
+  ): Promise<SummaryResponseDto> {
     const db = this.databaseService.getDatabase();
     const { period = SummaryPeriod.MONTHLY, from, to } = query;
 
@@ -167,7 +177,9 @@ export class TransactionsService {
     };
   }
 
-  async findAll(query: TransactionQueryDto): Promise<PaginatedTransactionResponseDto> {
+  async findAll(
+    query: TransactionQueryDto,
+  ): Promise<PaginatedTransactionResponseDto> {
     const db = this.databaseService.getDatabase();
     const { page = 1, limit = 10, status, from, to } = query;
     const offset = (page - 1) * limit;
@@ -207,20 +219,43 @@ export class TransactionsService {
   ): { fromDate: Date; toDate: Date } {
     const now = new Date();
     let fromDate: Date;
-    let toDate: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    const toDate: Date = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59,
+    );
 
     if (period === SummaryPeriod.CUSTOM) {
       if (!from || !to) {
-        throw new BadRequestException('from and to are required for custom period');
+        throw new BadRequestException(
+          'from and to are required for custom period',
+        );
       }
       return { fromDate: from, toDate: to };
     }
 
     if (period === SummaryPeriod.DAILY) {
-      fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      fromDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,
+        0,
+        0,
+      );
     } else if (period === SummaryPeriod.WEEKLY) {
       const day = now.getDay();
-      fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day, 0, 0, 0);
+      fromDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - day,
+        0,
+        0,
+        0,
+      );
     } else {
       fromDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
     }
@@ -229,6 +264,8 @@ export class TransactionsService {
   }
 
   private toDto(tx: any): TransactionResponseDto {
-    return plainToClass(TransactionResponseDto, tx, { excludeExtraneousValues: true });
+    return plainToClass(TransactionResponseDto, tx, {
+      excludeExtraneousValues: true,
+    });
   }
 }

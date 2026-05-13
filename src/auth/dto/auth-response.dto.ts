@@ -68,3 +68,31 @@ export class MessageResponseDto {
   })
   message: string;
 }
+
+export class SendOtpResponseDto {
+  @ApiProperty({
+    description: 'Indicates whether the OTP was sent successfully',
+    example: true,
+    type: Boolean,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Human-readable status message',
+    example: 'OTP sent successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Phone number to which the OTP was sent',
+    example: '01711223344',
+  })
+  phone: string;
+
+  @ApiProperty({
+    description: 'OTP expiration time in minutes',
+    example: 5,
+    type: Number,
+  })
+  expiresInMinutes: number;
+}

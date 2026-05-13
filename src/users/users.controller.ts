@@ -10,9 +10,19 @@ import {
   ParseUUIDPipe,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { UpdateUserDto, QueryUserDto, UserResponseDto, PaginatedUserResponseDto } from './dto';
+import {
+  UpdateUserDto,
+  QueryUserDto,
+  UserResponseDto,
+  PaginatedUserResponseDto,
+} from './dto';
 import { Roles, CurrentUser } from '../auth/decorators';
 
 @ApiTags('Users')

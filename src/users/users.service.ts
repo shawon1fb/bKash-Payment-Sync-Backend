@@ -47,7 +47,15 @@ export class UsersService {
 
   async findAll(queryDto: QueryUserDto): Promise<PaginatedUserResponseDto> {
     const db = this.databaseService.getDatabase();
-    const { page = 1, limit = 10, search, role, isActive, sortBy, sortOrder } = queryDto;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      role,
+      isActive,
+      sortBy,
+      sortOrder,
+    } = queryDto;
     const offset = (page - 1) * limit;
 
     const conditions: any[] = [];
@@ -78,7 +86,12 @@ export class UsersService {
       .limit(limit)
       .offset(offset);
 
-    return new PaginatedUserResponseDto(rows.map(this.toDto), Number(total), page, limit);
+    return new PaginatedUserResponseDto(
+      rows.map(this.toDto),
+      Number(total),
+      page,
+      limit,
+    );
   }
 
   async findOne(id: string): Promise<UserResponseDto> {
@@ -129,6 +142,8 @@ export class UsersService {
   }
 
   private toDto(user: any): UserResponseDto {
-    return plainToClass(UserResponseDto, user, { excludeExtraneousValues: true });
+    return plainToClass(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 }

@@ -12,11 +12,25 @@ import {
   ParseUUIDPipe,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { AdminTransactionQueryDto, CreateAgentDto } from './dto';
-import { SummaryQueryDto, SummaryResponseDto, PaginatedTransactionResponseDto } from '../transactions/dto';
-import { QueryUserDto, UserResponseDto, PaginatedUserResponseDto, UpdateUserDto } from '../users/dto';
+import {
+  SummaryQueryDto,
+  SummaryResponseDto,
+  PaginatedTransactionResponseDto,
+} from '../transactions/dto';
+import {
+  QueryUserDto,
+  UserResponseDto,
+  PaginatedUserResponseDto,
+  UpdateUserDto,
+} from '../users/dto';
 import { Roles } from '../auth/decorators';
 
 @ApiTags('Admin')
@@ -87,7 +101,9 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate agent' })
   @ApiResponse({ status: 200, type: UserResponseDto })
-  deactivateAgent(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
+  deactivateAgent(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<UserResponseDto> {
     return this.adminService.deactivateAgent(id);
   }
 
