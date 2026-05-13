@@ -28,10 +28,9 @@ import {
   SummaryResponseDto,
   PaginatedTransactionResponseDto,
 } from './dto';
-import { CurrentUser } from '../auth/decorators';
+import { CurrentUser, Public, Roles } from '../auth/decorators';
 import { UserResponseDto } from '../users/dto';
 import { UsersService } from '../users/users.service';
-import { Public } from '../auth/decorators';
 import { ErrorResponseDto, ValidationErrorResponseDto } from '../common';
 
 @ApiTags('Transactions')
@@ -102,35 +101,29 @@ export class TransactionsController {
   }
 
   @Patch(':transactionId/status')
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Update transaction status',
-    description:
-      'Allows the owning agent to update the status of their transaction from `received` to `paid`. ' +
-      'Only the agent who uploaded the transaction can update its status.',
+    summary: 'Update transaction status (admin only)',
+    description: 'Admin only. Updates the status of a transaction from `received` to `paid`.',
   })
   @ApiParam({
     name: 'transactionId',
     description: 'bKash transaction ID (TrxID)',
     example: 'A2B3C4D5E6',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Transaction status updated and returned.',
-    type: TransactionResponseDto,
-  })
+  @ApiResponse({ status: 200, description: 'Transaction status updated and returned.', type: TransactionResponseDto })
   @ApiResponse({ status: 400, description: 'Validation error — invalid status value.', type: ValidationErrorResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT token.', type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: 'Forbidden — caller is not the owner of this transaction.', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required.', type: ErrorResponseDto })
   @ApiResponse({ status: 404, description: 'Not found — no transaction with this TrxID.', type: ErrorResponseDto })
   @ApiResponse({ status: 500, description: 'Internal server error.', type: ErrorResponseDto })
   updateStatus(
-    @CurrentUser() user: UserResponseDto,
     @Param('transactionId') transactionId: string,
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     dto: UpdateStatusDto,
   ): Promise<TransactionResponseDto> {
-    return this.transactionsService.updateStatus(transactionId, user.id, dto);
+    return this.transactionsService.updateStatus(transactionId, dto);
   }
 
   @Get()

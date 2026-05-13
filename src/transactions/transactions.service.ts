@@ -84,7 +84,6 @@ export class TransactionsService {
 
   async updateStatus(
     transactionId: string,
-    agentId: string,
     dto: UpdateStatusDto,
   ): Promise<TransactionResponseDto> {
     const db = this.databaseService.getDatabase();
@@ -94,8 +93,7 @@ export class TransactionsService {
       .from(transactions)
       .where(
         and(
-          eq(transactions.transactionId, transactionId),
-          eq(transactions.agentId, agentId),
+          eq(transactions.transactionId, transactionId)
         ),
       );
 
