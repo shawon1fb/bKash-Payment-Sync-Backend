@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { eq, and, gte, lte, count, sum, desc } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
-import { transactions } from '../database/schema';
+import { transactions, users } from '../database/schema';
 import { parseBkashSms } from './utils/sms-parser.util';
 import {
   UploadTransactionDto,
@@ -131,15 +131,16 @@ export class TransactionsService {
       .where(where);
 
     const rows = await db
-      .select()
+      .select({ tx: transactions, agentName: users.name })
       .from(transactions)
+      .leftJoin(users, eq(transactions.agentId, users.id))
       .where(where)
       .orderBy(desc(transactions.transactionTime))
       .limit(limit)
       .offset(offset);
 
     return new PaginatedTransactionResponseDto(
-      rows.map(this.toDto),
+      rows.map((r) => this.toDto({ ...r.tx, agentName: r.agentName ?? null })),
       Number(total),
       page,
       limit,
@@ -197,15 +198,16 @@ export class TransactionsService {
       .where(where);
 
     const rows = await db
-      .select()
+      .select({ tx: transactions, agentName: users.name })
       .from(transactions)
+      .leftJoin(users, eq(transactions.agentId, users.id))
       .where(where)
       .orderBy(desc(transactions.transactionTime))
       .limit(limit)
       .offset(offset);
 
     return new PaginatedTransactionResponseDto(
-      rows.map(this.toDto),
+      rows.map((r) => this.toDto({ ...r.tx, agentName: r.agentName ?? null })),
       Number(total),
       page,
       limit,

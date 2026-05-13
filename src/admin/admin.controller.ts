@@ -10,7 +10,9 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  ParseIntPipe,
   ValidationPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,7 +22,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
-import { AdminTransactionQueryDto, CreateAgentDto } from './dto';
+import { AdminTransactionQueryDto, CreateAgentDto, TopAgentResponseDto } from './dto';
 import { ErrorResponseDto, ValidationErrorResponseDto } from '../common';
 import {
   SummaryQueryDto,
@@ -91,6 +93,31 @@ export class AdminController {
   }
 
   // ── Agents ────────────────────────────────────────────────────────────────
+
+  @Get('agents/:id')
+  @ApiOperation({ summary: 'Get agent by ID', description: 'Admin only. Returns a single agent by UUID.' })
+  @ApiParam({ name: 'id', description: 'Agent UUID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiResponse({ status: 200, description: 'Agent found.', type: UserResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT token.', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden — caller does not have admin role.', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'Not found — no agent with this ID.', type: ErrorResponseDto })
+  getAgent(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
+    return this.adminService.getAgent(id);
+  }
+
+  @Get('agents/top')
+  @ApiOperation({
+    summary: 'Top agents by paid amount',
+    description: 'Admin only. Returns top N agents ranked by total paid transaction amount.',
+  })
+  @ApiResponse({ status: 200, description: 'Top agents list.', type: [TopAgentResponseDto] })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT token.', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden — caller does not have admin role.', type: ErrorResponseDto })
+  getTopAgents(
+    @Query('limit', new DefaultValuePipe(5), ParseIntPipe) limit: number,
+  ): Promise<TopAgentResponseDto[]> {
+    return this.adminService.getTopAgents(limit);
+  }
 
   @Get('agents')
   @ApiOperation({

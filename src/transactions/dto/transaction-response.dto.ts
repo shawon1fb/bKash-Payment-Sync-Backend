@@ -50,6 +50,10 @@ export class TransactionResponseDto {
   @Expose()
   agentId: string;
 
+  @ApiProperty({ description: 'Name of the agent', example: 'John Doe', nullable: true })
+  @Expose()
+  agentName: string | null;
+
   @ApiProperty({
     description: 'Phone number of the sender extracted from the SMS. Null when not present in the message.',
     example: '01711223344',

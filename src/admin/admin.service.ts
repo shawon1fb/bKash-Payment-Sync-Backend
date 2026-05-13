@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { eq, and, gte, lte, count, sum, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, count, sum, desc, sql } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
-import { transactions } from '../database/schema';
+import { transactions, users } from '../database/schema';
 import { TransactionsService } from '../transactions/transactions.service';
 import { UsersService } from '../users/users.service';
 import { AdminTransactionQueryDto } from './dto/admin-transaction-query.dto';
@@ -18,6 +18,7 @@ import {
   TransactionResponseDto,
 } from '../transactions/dto';
 import { plainToClass } from 'class-transformer';
+import { TopAgentResponseDto } from './dto/top-agent-response.dto';
 
 @Injectable()
 export class AdminService {
@@ -55,6 +56,10 @@ export class AdminService {
     return this.transactionsService.findByAgent(agentId, query as any);
   }
 
+  async getAgent(id: string): Promise<UserResponseDto> {
+    return this.usersService.findOne(id);
+  }
+
   async listAgents(query: QueryUserDto): Promise<PaginatedUserResponseDto> {
     return this.usersService.findAll({ ...query, role: 'agent' as any });
   }
@@ -72,5 +77,38 @@ export class AdminService {
 
   async deactivateAgent(id: string): Promise<UserResponseDto> {
     return this.usersService.softDelete(id);
+  }
+
+  async getTopAgents(limit = 5): Promise<TopAgentResponseDto[]> {
+    const db = this.databaseService.getDatabase();
+
+    const rows = await db
+      .select({
+        agentId: users.id,
+        name: users.name,
+        phone: users.phone,
+        totalPaid: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
+        txCount: sql<number>`COUNT(${transactions.id})`,
+      })
+      .from(users)
+      .leftJoin(
+        transactions,
+        and(
+          eq(transactions.agentId, users.id),
+          eq(transactions.status, 'paid'),
+        ),
+      )
+      .where(eq(users.role, 'agent'))
+      .groupBy(users.id)
+      .orderBy(desc(sql`COALESCE(SUM(${transactions.amount}), 0)`))
+      .limit(limit);
+
+    return rows.map((r) => ({
+      agentId: r.agentId,
+      name: r.name,
+      phone: r.phone,
+      totalPaid: parseFloat(r.totalPaid),
+      txCount: Number(r.txCount),
+    }));
   }
 }
