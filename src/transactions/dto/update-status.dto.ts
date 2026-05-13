@@ -7,7 +7,13 @@ export enum TransactionStatus {
 }
 
 export class UpdateStatusDto {
-  @ApiProperty({ enum: TransactionStatus, example: 'paid' })
+  @ApiProperty({
+    description:
+      'New status for the transaction. `received`: payment received by agent. `paid`: agent has paid out to the customer.',
+    enum: TransactionStatus,
+    enumName: 'TransactionStatus',
+    example: TransactionStatus.PAID,
+  })
   @IsEnum(TransactionStatus)
   status: TransactionStatus;
 }

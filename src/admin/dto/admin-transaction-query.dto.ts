@@ -12,14 +12,25 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TransactionStatus } from '../../transactions/dto/update-status.dto';
 
 export class AdminTransactionQueryDto {
-  @ApiPropertyOptional({ default: 1 })
+  @ApiPropertyOptional({
+    description: 'Page number (1-based)',
+    default: 1,
+    minimum: 1,
+    example: 1,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ default: 10 })
+  @ApiPropertyOptional({
+    description: 'Number of records per page',
+    default: 10,
+    minimum: 1,
+    maximum: 100,
+    example: 10,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -27,23 +38,37 @@ export class AdminTransactionQueryDto {
   @Max(100)
   limit?: number = 10;
 
-  @ApiPropertyOptional({ description: 'Filter by agent UUID' })
+  @ApiPropertyOptional({
+    description: 'Filter transactions by a specific agent UUID',
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
   @IsUUID()
   agentId?: string;
 
-  @ApiPropertyOptional({ enum: TransactionStatus })
+  @ApiPropertyOptional({
+    description: 'Filter by transaction status',
+    enum: TransactionStatus,
+    enumName: 'TransactionStatus',
+  })
   @IsOptional()
   @IsEnum(TransactionStatus)
   status?: TransactionStatus;
 
-  @ApiPropertyOptional({ example: '2026-05-01' })
+  @ApiPropertyOptional({
+    description: 'Filter transactions on or after this date (ISO 8601)',
+    example: '2026-05-01',
+  })
   @IsOptional()
   @IsDateString()
   @Transform(({ value }) => (value ? new Date(value) : undefined))
   from?: Date;
 
-  @ApiPropertyOptional({ example: '2026-05-31' })
+  @ApiPropertyOptional({
+    description: 'Filter transactions on or before this date (ISO 8601)',
+    example: '2026-05-31',
+  })
   @IsOptional()
   @IsDateString()
   @Transform(({ value }) => (value ? new Date(value) : undefined))

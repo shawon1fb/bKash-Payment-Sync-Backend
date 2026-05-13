@@ -23,14 +23,14 @@ export enum UserSortField {
 }
 
 export class QueryUserDto {
-  @ApiPropertyOptional({ example: 1, default: 1 })
+  @ApiPropertyOptional({ description: 'Page number (1-based)', default: 1, minimum: 1, example: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ example: 10, default: 10 })
+  @ApiPropertyOptional({ description: 'Number of records per page', default: 10, minimum: 1, maximum: 100, example: 10 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -38,44 +38,46 @@ export class QueryUserDto {
   @Max(100)
   limit?: number = 10;
 
-  @ApiPropertyOptional({ example: 'john' })
+  @ApiPropertyOptional({ description: 'Full-text search on user name', example: 'john' })
   @IsOptional()
   @IsString()
   @Transform(({ value }) => value?.trim())
   search?: string;
 
-  @ApiPropertyOptional({ enum: UserRole })
+  @ApiPropertyOptional({ description: 'Filter by user role', enum: UserRole, enumName: 'UserRole' })
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
 
-  @ApiPropertyOptional({ example: true })
+  @ApiPropertyOptional({ description: 'Filter by account active status', example: true })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()
   isActive?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Field to sort results by',
     enum: UserSortField,
+    enumName: 'UserSortField',
     default: UserSortField.CREATED_AT,
   })
   @IsOptional()
   @IsEnum(UserSortField)
   sortBy?: UserSortField = UserSortField.CREATED_AT;
 
-  @ApiPropertyOptional({ enum: SortOrder, default: SortOrder.DESC })
+  @ApiPropertyOptional({ description: 'Sort direction', enum: SortOrder, enumName: 'SortOrder', default: SortOrder.DESC })
   @IsOptional()
   @IsEnum(SortOrder)
   sortOrder?: SortOrder = SortOrder.DESC;
 }
 
 export class UserPaginationMetaDto {
-  @ApiProperty() total: number;
-  @ApiProperty() page: number;
-  @ApiProperty() limit: number;
-  @ApiProperty() totalPages: number;
-  @ApiProperty() hasNextPage: boolean;
-  @ApiProperty() hasPreviousPage: boolean;
+  @ApiProperty({ description: 'Total number of matching records', example: 50 }) total: number;
+  @ApiProperty({ description: 'Current page number (1-based)', example: 1 }) page: number;
+  @ApiProperty({ description: 'Number of records per page', example: 10 }) limit: number;
+  @ApiProperty({ description: 'Total number of pages', example: 5 }) totalPages: number;
+  @ApiProperty({ description: 'Whether a next page exists', example: true }) hasNextPage: boolean;
+  @ApiProperty({ description: 'Whether a previous page exists', example: false }) hasPreviousPage: boolean;
 }
 
 export class PaginatedUserResponseDto {

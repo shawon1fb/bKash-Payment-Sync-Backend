@@ -92,6 +92,119 @@ src/
 4. All DTOs use `class-validator` decorators + `@ApiProperty()` for Swagger
 5. Routes are JWT-protected by default; use `@Public()` to opt out
 
+## API Documentation Standards
+
+Every endpoint and DTO **must** follow these rules. No exceptions.
+
+### Controller — `@ApiOperation`
+
+```ts
+@ApiOperation({
+  summary: 'Short action label (≤60 chars)',
+  description: 'Full sentence explaining what the endpoint does, who can call it, and any side effects or constraints.',
+})
+```
+
+### Controller — `@ApiResponse` per endpoint
+
+Always declare **all** applicable status codes. Use typed schemas — never bare descriptions.
+
+| Status | When | Schema type |
+|--------|------|-------------|
+| 200/201 | Success | The response DTO class |
+| 400 | Validation failure | `ValidationErrorResponseDto` |
+| 401 | Missing/invalid JWT | `ErrorResponseDto` |
+| 403 | Insufficient role | `ErrorResponseDto` (admin-only routes) |
+| 404 | Resource not found | `ErrorResponseDto` (routes with `:id` param) |
+| 409 | Duplicate/conflict | `ErrorResponseDto` (create routes) |
+| 429 | Rate limited | `ErrorResponseDto` (auth routes) |
+| 500 | Server error | `ErrorResponseDto` |
+
+Import shared error DTOs from `'../common'`:
+
+```ts
+import { ErrorResponseDto, ValidationErrorResponseDto } from '../common';
+```
+
+Add `description` to every `@ApiResponse`:
+
+```ts
+@ApiResponse({ status: 201, description: 'Resource created and returned.', type: MyResponseDto })
+@ApiResponse({ status: 400, description: 'Validation error — invalid request body.', type: ValidationErrorResponseDto })
+@ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT token.', type: ErrorResponseDto })
+@ApiResponse({ status: 500, description: 'Internal server error.', type: ErrorResponseDto })
+```
+
+### Controller — `@ApiParam` for path parameters
+
+```ts
+@ApiParam({ name: 'id', description: 'User UUID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+```
+
+### Request DTOs (`@ApiProperty` / `@ApiPropertyOptional`)
+
+Every field must have:
+- `description` — plain-English explanation of the field's meaning
+- `example` — a realistic value
+- `minLength` / `maxLength` for strings with length constraints
+- `pattern` for regex-validated strings (escape backslashes: `'^01[3-9]\\d{8}$'`)
+- `format` for typed strings (`'uuid'`, `'date-time'`, `'jwt'`)
+- `minimum` / `maximum` for numeric range constraints
+- `enum` + `enumName` for enum fields; describe each enum value in `description`
+
+```ts
+// String with constraints
+@ApiProperty({
+  description: 'Full name of the agent',
+  example: 'John Doe',
+  minLength: 2,
+  maxLength: 100,
+})
+
+// Phone number
+@ApiProperty({
+  description: 'Contact phone number (Bangladeshi format)',
+  example: '01711223344',
+  pattern: '^01[3-9]\\d{8}$',
+  minLength: 11,
+  maxLength: 11,
+})
+
+// Enum
+@ApiProperty({
+  description: '`admin`: full system access. `agent`: own transactions only.',
+  enum: ['admin', 'agent'],
+  enumName: 'UserRole',
+  example: 'agent',
+})
+
+// Date-time
+@ApiProperty({
+  description: 'Timestamp when the record was created',
+  format: 'date-time',
+  example: '2026-01-15T08:00:00.000Z',
+})
+
+// UUID
+@ApiProperty({
+  description: 'Unique identifier',
+  format: 'uuid',
+  example: '550e8400-e29b-41d4-a716-446655440000',
+})
+```
+
+### Response DTOs
+
+Apply the same `@ApiProperty` rules as request DTOs. Additionally:
+- Add `format: 'uuid'` to UUID fields
+- Add `format: 'date-time'` + realistic `example` to all `Date` fields
+- Add `nullable: true` to fields that can be null
+- Mirror `minLength`, `maxLength`, `pattern` from the corresponding request DTO
+
+### Shared error DTO rule
+
+`ErrorResponseDto` and `ValidationErrorResponseDto` (in `src/common/dto/error-response.dto.ts`) must **not** contain hardcoded `statusCode` or `message` examples, because the same class is reused across 400/401/403/500 responses. The field `description` is sufficient; per-response context is conveyed by `@ApiResponse({ description: '...' })`.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env`. Required groups: `APP` (PORT, NODE_ENV, API_PREFIX), `DB_*` (PostgreSQL), `REDIS_*` + `CACHE_TTL`, `JWT_*` + `BCRYPT_ROUNDS`, `RATE_LIMIT_*`.

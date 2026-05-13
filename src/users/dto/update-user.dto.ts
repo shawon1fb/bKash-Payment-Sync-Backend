@@ -9,7 +9,12 @@ import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateUserDto {
-  @ApiPropertyOptional({ example: 'John Doe' })
+  @ApiPropertyOptional({
+    description: 'Updated display name for the user',
+    example: 'John Doe',
+    minLength: 2,
+    maxLength: 100,
+  })
   @IsOptional()
   @IsString()
   @MinLength(2)
@@ -17,7 +22,10 @@ export class UpdateUserDto {
   @Transform(({ value }) => value?.trim())
   name?: string;
 
-  @ApiPropertyOptional({ example: true })
+  @ApiPropertyOptional({
+    description: 'Set to false to deactivate the user account, true to reactivate it',
+    example: true,
+  })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
