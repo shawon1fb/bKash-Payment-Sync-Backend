@@ -14,7 +14,8 @@
       "Bash(pkill -f \"nest start\")",
       "Bash(pkill -f \"ts-node\")",
       "Bash(yarn test *)",
-      "Bash(yarn test:e2e)"
+      "Bash(yarn test:e2e)",
+      "Bash(node -e ' *)"
     ]
   }
 }
