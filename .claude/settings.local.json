@@ -12,7 +12,9 @@
       "Bash(docker-compose up *)",
       "Bash(yarn db:migrate)",
       "Bash(pkill -f \"nest start\")",
-      "Bash(pkill -f \"ts-node\")"
+      "Bash(pkill -f \"ts-node\")",
+      "Bash(yarn test *)",
+      "Bash(yarn test:e2e)"
     ]
   }
 }
