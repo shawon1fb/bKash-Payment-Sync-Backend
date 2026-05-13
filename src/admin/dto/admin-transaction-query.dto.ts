@@ -6,8 +6,10 @@ import {
   IsEnum,
   IsDate,
   IsUUID,
+  IsString,
+  MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TransactionStatus } from '../../transactions/dto/update-status.dto';
 
@@ -26,6 +28,13 @@ export class AdminTransactionQueryDto {
   @Min(1)
   @Max(500)
   limit?: number = 10;
+
+  @ApiPropertyOptional({ description: 'Search by TrxID, sender phone, or receiver phone (partial match)', example: 'B4G6H8J2K5' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Transform(({ value }) => value?.trim())
+  search?: string;
 
   @ApiPropertyOptional({ description: 'Filter by agent UUID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsOptional()

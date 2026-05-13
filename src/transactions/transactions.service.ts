@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq, and, gte, lte, count, sum, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, count, sum, desc, ilike, or } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
 import { transactions, users } from '../database/schema';
 import { parseBkashSms } from './utils/sms-parser.util';
@@ -181,12 +181,22 @@ export class TransactionsService {
   ): Promise<PaginatedTransactionResponseDto> {
     const db = this.databaseService.getDatabase();
     const { page = 1, limit = 10, status, from, to } = query;
+    const search = (query as any).search as string | undefined;
     const offset = (page - 1) * limit;
 
     const conditions: any[] = [];
     if (status) conditions.push(eq(transactions.status, status as any));
     if (from) conditions.push(gte(transactions.transactionTime, from));
     if (to) conditions.push(lte(transactions.transactionTime, to));
+    if (search) {
+      conditions.push(
+        or(
+          ilike(transactions.transactionId, `%${search}%`),
+          ilike(transactions.senderPhone, `%${search}%`),
+          ilike(transactions.receiverPhone, `%${search}%`),
+        ),
+      );
+    }
 
     const where = conditions.length ? and(...conditions) : undefined;
 
