@@ -29,7 +29,7 @@ export class AdminTransactionQueryDto {
   @Max(500)
   limit?: number = 10;
 
-  @ApiPropertyOptional({ description: 'Search by TrxID, sender phone, or receiver phone (partial match)', example: 'B4G6H8J2K5' })
+  @ApiPropertyOptional({ description: 'Search by TrxID, sender phone, receiver phone, or agent name (partial match)', example: 'B4G6H8J2K5' })
   @IsOptional()
   @IsString()
   @MaxLength(100)

@@ -194,6 +194,7 @@ export class TransactionsService {
           ilike(transactions.transactionId, `%${search}%`),
           ilike(transactions.senderPhone, `%${search}%`),
           ilike(transactions.receiverPhone, `%${search}%`),
+          ilike(users.name, `%${search}%`),
         ),
       );
     }
@@ -203,6 +204,7 @@ export class TransactionsService {
     const [{ total }] = await db
       .select({ total: count() })
       .from(transactions)
+      .leftJoin(users, eq(transactions.agentId, users.id))
       .where(where);
 
     const rows = await db
