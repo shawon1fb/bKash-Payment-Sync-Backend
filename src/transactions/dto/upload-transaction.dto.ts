@@ -1,5 +1,5 @@
-import { IsString, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, MinLength, IsUUID, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UploadTransactionDto {
   @ApiProperty({
@@ -10,4 +10,13 @@ export class UploadTransactionDto {
   @IsString()
   @MinLength(10)
   rawMessage: string;
+
+  @ApiPropertyOptional({
+    description: 'Agent UUID — required when caller has admin role. Ignored for agent callers (own ID used automatically).',
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsOptional()
+  @IsUUID()
+  agentId?: string;
 }

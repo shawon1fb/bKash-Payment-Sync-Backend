@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   ValidationPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,6 +30,7 @@ import {
 } from './dto';
 import { CurrentUser } from '../auth/decorators';
 import { UserResponseDto } from '../users/dto';
+import { UsersService } from '../users/users.service';
 import { Public } from '../auth/decorators';
 import { ErrorResponseDto, ValidationErrorResponseDto } from '../common';
 
@@ -36,7 +38,10 @@ import { ErrorResponseDto, ValidationErrorResponseDto } from '../common';
 @ApiBearerAuth()
 @Controller('transactions')
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post('upload')
   @HttpCode(HttpStatus.CREATED)
@@ -55,11 +60,18 @@ export class TransactionsController {
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT token.', type: ErrorResponseDto })
   @ApiResponse({ status: 409, description: 'Conflict — transaction with this TrxID already exists.', type: ErrorResponseDto })
   @ApiResponse({ status: 500, description: 'Internal server error.', type: ErrorResponseDto })
-  upload(
+  async upload(
     @CurrentUser() user: UserResponseDto,
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     dto: UploadTransactionDto,
   ): Promise<TransactionResponseDto> {
+    if (user.role === 'admin') {
+      if (!dto.agentId) {
+        throw new BadRequestException('agentId is required for admin upload');
+      }
+      const agent = await this.usersService.findOne(dto.agentId);
+      return this.transactionsService.upload(agent.id, agent.phone, dto);
+    }
     return this.transactionsService.upload(user.id, user.phone, dto);
   }
 
