@@ -34,14 +34,14 @@ export class TransactionQueryDto {
     description: 'Number of records per page',
     default: 10,
     minimum: 1,
-    maximum: 100,
+    maximum: 500,
     example: 10,
   })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  @Max(100)
+  @Max(500)
   limit?: number = 10;
 
   @ApiPropertyOptional({
